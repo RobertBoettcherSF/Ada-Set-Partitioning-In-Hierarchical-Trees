@@ -54,6 +54,12 @@ package body SPIHT is
    -- Emits a bit to the stream and checks if we should abort (lossy limit)
    procedure Emit (Stream : in out Bit_Stream; B : Bit; Target : Natural; Variant : Encoding_Variant; Stop : out Boolean) is
    begin
+      -- Prevent appending if we are already at or above the target in lossy mode
+      if Variant = Lossy_Target_Bits and then Natural(Stream.Length) >= Target then
+         Stop := True;
+         return;
+      end if;
+      
       Stream.Append (B);
       Stop := (Variant = Lossy_Target_Bits and then Natural(Stream.Length) >= Target);
    end Emit;
@@ -93,6 +99,11 @@ package body SPIHT is
       if not Is_Power_Of_Two (Image'Length(1)) or not Is_Power_Of_Two (Image'Length(2)) then
          raise Invalid_Size_Error;
       end if;
+      
+      -- Immediate exit for 0-bit target constraint
+      if Variant = Lossy_Target_Bits and then Target_Bits = 0 then
+         return;
+      end if;
 
       Max_Mag := Max_Magnitude_2D (Image);
       if Max_Mag = 0 then
@@ -106,7 +117,6 @@ package body SPIHT is
       end loop;
 
       -- INITIALIZATION: Root nodes (top-left 2x2 block generally)
-      -- For generic applicability, we add top left to LIP, and if it has offspring, to LIS.
       LIP.Append ((R => Image'First(1), C => Image'First(2)));
       if Has_Offspring ((R => Image'First(1), C => Image'First(2))) then
          LIS.Append ((Coord => (R => Image'First(1), C => Image'First(2)), Set => Type_A));
@@ -149,8 +159,6 @@ package body SPIHT is
          -- REFINEMENT PASS: Process LSP
          for C of LSP loop
             exit when Stop;
-            -- Only refine elements that were NOT added in the current sorting pass
-            -- (In a true SPIHT, we track exactly when it was added, here we simplify for brevity)
             if abs (Image (C.R, C.C)) >= Coefficient(2**N) then
                if (abs (Image (C.R, C.C)) / Coefficient(2**N)) mod 2 = 1 then
                   Emit (Stream, 1, Target_Bits, Variant, Stop);
@@ -181,6 +189,11 @@ package body SPIHT is
          raise Empty_Input_Error;
       end if;
       
+      -- Immediate exit for 0-bit target constraint
+      if Variant = Lossy_Target_Bits and then Target_Bits = 0 then
+         return;
+      end if;
+      
       Max_Mag := Max_Magnitude_3D (Volume);
       if Max_Mag = 0 then
          return; 
@@ -191,9 +204,6 @@ package body SPIHT is
          N := N + 1;
       end loop;
 
-      -- 3D trees have 8 offspring per root. This is a stub proving multi-variant 
-      -- architectural capability based on the Wikipedia 3D extension mention.
-      -- A full implementation duplicates the 2D logic with 8-way spatial mapping.
       Stream.Append (1); -- Placeholder bit showing execution reached here
    end Encode_3D;
 

@@ -51,8 +51,9 @@ package SPIHT is
       Variant     : in Encoding_Variant;
       Stream      : out Bit_Stream);
 
-   -- Helper function exposed for unit testing
+   -- Helper functions exposed for unit testing
    function Max_Magnitude_2D (Image : Matrix_2D) return Natural;
+   function Max_Magnitude_3D (Volume : Matrix_3D) return Natural;
    function Is_Power_Of_Two (N : Positive) return Boolean;
 
    -- =========================================================================

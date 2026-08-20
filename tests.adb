@@ -148,7 +148,7 @@ procedure Tests is
       Put_Line ("TEST 10 - Edge Case: Single Element Array (Power of 2 = 2^0)");
       Put_Line ("  10.1 Assume: 1x1 Array causes loop bound crashes.");
       declare
-         Mat : Matrix_2D (1..1, 1..1) := ((1 => 10));
+         Mat : Matrix_2D (1..1, 1..1) := (others => (others => 10));
          Bits : Bit_Stream;
       begin
          Encode_2D(Mat, 100, Lossless, Bits);
